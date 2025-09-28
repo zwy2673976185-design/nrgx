@@ -2,54 +2,390 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>东方淮竹悬浮窗白板测试</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>无服务器版白板悬浮窗</title>
     <style>
-        /* 纯白板核心样式，无任何装饰 */
+        /* 纯白板核心样式，无多余装饰 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             background: #fff; /* 绝对纯白底板 */
             height: 100vh;
-            overflow: hidden; 
+            overflow: hidden;
             touch-action: none; /* 屏蔽系统触摸冲突，确保拖拽顺滑 */
         }
     </style>
+    <!-- 悬浮窗核心逻辑（已移除服务器相关代码） -->
+    <script>
+        // 悬浮窗核心模块（无服务器依赖）
+        (function() {
+            if (window.floatingWindowInjected) return;
+            window.floatingWindowInjected = true;
+            let styleElement = null;
+            // 1. 配置项集中管理（删除后端地址）
+            const config = {
+                floatBtnSize: 60, // 悬浮球尺寸（px）
+                huaiZhuImgUrl: 'https://i.imgs.ovh/2025/09/28/75fraO.jpeg', // 东方淮竹原图
+                safeMargin: 20, // 屏幕安全边距（px）
+                defaultSafeBottom: 20, // 底部安全区默认值
+                floatBtnZIndex: 1002, // 悬浮球层级
+                floatWindowZIndex: 1001, // 弹窗层级
+                windowMaxHeight: 330, // 弹窗最大高度
+                btnActiveScale: 0.95, // 按钮按下缩放比例
+                cacheMaxCount: 10 // 历史记录缓存上限
+            };
+            // 2. 动态创建悬浮窗样式
+            function createStyle() {
+                if (styleElement && document.head.contains(styleElement)) {
+                    document.head.removeChild(styleElement);
+                }
+                styleElement = document.createElement('style');
+                styleElement.textContent = `
+                    /* 正方形东方淮竹悬浮球 */
+                    .float-btn {
+                        position: fixed; z-index: ${config.floatBtnZIndex};
+                        width: ${config.floatBtnSize}px; height: ${config.floatBtnSize}px;
+                        border-radius: 0; border: 2px solid #fff;
+                        box-shadow: 0 3px 15px rgba(0,0,0,0.3); cursor: pointer;
+                        user-select: none; -webkit-tap-highlight-color: transparent;
+                        transition: transform 0.2s ease, box-shadow 0.2s ease;
+                        background-image: url(${config.huaiZhuImgUrl});
+                        background-color: #f0f0f0; background-size: cover;
+                        background-position: center; background-repeat: no-repeat;
+                        padding: 0; margin: 0;
+                    }
+                    .float-btn:active { transform: scale(${config.btnActiveScale}); box-shadow: 0 5px 20px rgba(0,0,0,0.4); }
+                    /* 悬浮窗口 */
+                    .float-window {
+                        position: fixed; z-index: ${config.floatWindowZIndex};
+                        width: calc(100% - ${config.safeMargin*2}px); max-width: 320px;
+                        background: white; border-radius: 10px; box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+                        overflow: hidden; display: none; opacity: 0; transition: opacity 0.3s ease;
+                    }
+                    .float-window.active { display: block; opacity: 1; }
+                    .window-header {
+                        padding: 15px; background: #2563eb; color: white;
+                        font-size: 16px; font-weight: 500; display: flex;
+                        justify-content: space-between; align-items: center; cursor: move;
+                    }
+                    .window-close {
+                        background: transparent; border: none; color: white; font-size: 20px;
+                        cursor: pointer; width: 24px; height: 24px; display: flex;
+                        align-items: center; justify-content: center; padding: 0;
+                    }
+                    .history-list {
+                        padding: 10px; max-height: ${config.windowMaxHeight}px;
+                        overflow-y: auto; -webkit-overflow-scrolling: touch;
+                    }
+                    .history-item {
+                        padding: 12px; border-bottom: 1px solid #eee;
+                        display: flex; justify-content: space-between; align-items: flex-start;
+                    }
+                    .history-item:last-child { border-bottom: none; }
+                    .item-info { flex: 1; margin-right: 10px; }
+                    .item-filename {
+                        font-size: 14px; color: #333; margin-bottom: 4px;
+                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    }
+                    .item-time { font-size: 12px; color: #999; }
+                    .item-download {
+                        padding: 6px 12px; background: #2563eb; color: white;
+                        border: none; border-radius: 4px; font-size: 12px; cursor: pointer;
+                        transition: background-color 0.2s ease;
+                    }
+                    .item-download:hover { background: #1d4ed8; }
+                    .item-download:disabled { background: #93c5fd; cursor: not-allowed; }
+                `;
+                document.head.appendChild(styleElement);
+            }
+            // 3. 创建悬浮元素结构
+            function createElements() {
+                // 悬浮球
+                const floatBtn = document.createElement('button');
+                floatBtn.className = 'float-btn';
+                floatBtn.id = 'floatBtn';
+                document.body.appendChild(floatBtn);
+                // 悬浮窗口
+                const floatWindow = document.createElement('div');
+                floatWindow.className = 'float-window';
+                floatWindow.id = 'floatWindow';
+                floatWindow.innerHTML = `
+                    <div class="window-header" id="windowHeader">
+                        推送历史记录
+                        <button class="window-close" id="closeWindow">×</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="history-item">
+                            <div class="item-info">
+                                <div class="item-filename">暂无推送记录</div>
+                                <div class="item-time">-</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(floatWindow);
+                return { floatBtn, floatWindow };
+            }
+            // 4. 工具函数（保留核心功能）
+            const utils = {
+                // 时间格式化
+                formatTime: function(dateStr) {
+                    try {
+                        const date = new Date(dateStr);
+                        return [
+                            date.getFullYear(),
+                            String(date.getMonth() + 1).padStart(2, '0'),
+                            String(date.getDate()).padStart(2, '0')
+                        ].join('-') + ' ' + [
+                            String(date.getHours()).padStart(2, '0'),
+                            String(date.getMinutes()).padStart(2, '0')
+                        ].join(':');
+                    } catch (err) {
+                        return '时间格式错误';
+                    }
+                },
+                // 安全区计算
+                getSafeBottom: function() {
+                    const bodyStyle = getComputedStyle(document.body);
+                    const paddingBottom = parseFloat(bodyStyle.paddingBottom);
+                    return isNaN(paddingBottom) ? config.defaultSafeBottom : paddingBottom;
+                },
+                // XSS转义
+                escapeHtml: function(str) {
+                    if (!str) return '';
+                    return str.replace(/&/g, '&amp;')
+                              .replace(/</g, '&lt;')
+                              .replace(/>/g, '&gt;')
+                              .replace(/"/g, '&quot;')
+                              .replace(/'/g, '&#039;');
+                }
+            };
+            // 5. 核心功能初始化（移除服务器相关逻辑）
+            function initFunctions(elements) {
+                const { floatBtn, floatWindow } = elements;
+                const closeWindow = document.getElementById('closeWindow');
+                const historyList = document.getElementById('historyList');
+                const windowHeader = document.getElementById('windowHeader');
+                // 状态变量（删除轮询相关变量）
+                let localLastUpdate = localStorage.getItem('floatingWindowLastUpdate') || '';
+                let pushHistory = JSON.parse(localStorage.getItem('floatingWindowHistory') || '[]');
+                let btnIsDragging = false;
+                let btnDragStart = 0;
+                let btnStartX = 0;
+                let btnStartY = 0;
+                let btnOffsetX = 0;
+                let btnOffsetY = 0;
+                let winIsDragging = false;
+                let winDragStart = 0;
+                let winStartX = 0;
+                let winStartY = 0;
+                let winOffsetX = 0;
+                let winOffsetY = 0;
+                // 悬浮球定位
+                function initBtnPosition() {
+                    const windowWidth = document.documentElement.clientWidth;
+                    const windowHeight = document.documentElement.clientHeight;
+                    const safeBottom = utils.getSafeBottom();
+                    floatBtn.style.left = `${windowWidth - config.floatBtnSize - config.safeMargin}px`;
+                    floatBtn.style.top = `${windowHeight - config.floatBtnSize - safeBottom - config.safeMargin}px`;
+                }
+                // 下载功能（带加载反馈）
+                function downloadFile(downloadUrl, btnElement) {
+                    if (!downloadUrl) {
+                        alert('下载链接无效，请稍后重试');
+                        return;
+                    }
+                    const originalText = btnElement.textContent;
+                    btnElement.textContent = '下载中...';
+                    btnElement.disabled = true;
+                    try {
+                        const a = document.createElement('a');
+                        a.href = downloadUrl;
+                        a.target = '_blank';
+                        a.click();
+                        setTimeout(() => {
+                            btnElement.textContent = originalText;
+                            btnElement.disabled = false;
+                        }, 1000);
+                    } catch (err) {
+                        console.error('下载失败：', err);
+                        alert('下载功能异常，请手动访问链接');
+                        btnElement.textContent = originalText;
+                        btnElement.disabled = false;
+                    }
+                }
+                // 渲染历史记录（删除服务器相关提示）
+                function renderHistoryList() {
+                    if (pushHistory.length === 0) {
+                        historyList.innerHTML = `
+                            <div class="history-item">
+                                <div class="item-info">
+                                    <div class="item-filename">暂无推送记录</div>
+                                    <div class="item-time">-</div>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    let html = '';
+                    pushHistory.forEach(item => {
+                        const escapedFilename = utils.escapeHtml(item.filename);
+                        const escapedTime = utils.escapeHtml(item.time);
+                        html += `
+                            <div class="history-item">
+                                <div class="item-info">
+                                    <div class="item-filename">${escapedFilename}</div>
+                                    <div class="item-time">${escapedTime}</div>
+                                </div>
+                                <button class="item-download" data-url="${item.downloadUrl}">下载</button>
+                            </div>
+                        `;
+                    });
+                    historyList.innerHTML = html;
+                    // 本地缓存（保留，可手动添加记录）
+                    const cacheHistory = pushHistory.slice(0, config.cacheMaxCount);
+                    localStorage.setItem('floatingWindowHistory', JSON.stringify(cacheHistory));
+                    localStorage.setItem('floatingWindowLastUpdate', localLastUpdate);
+                }
+                // 悬浮球点击
+                floatBtn.addEventListener('click', () => {
+                    if (!btnIsDragging) {
+                        floatWindow.classList.toggle('active');
+                        if (floatWindow.classList.contains('active')) {
+                            const btnRect = floatBtn.getBoundingClientRect();
+                            const winWidth = floatWindow.offsetWidth;
+                            const winHeight = floatWindow.offsetHeight;
+                            const windowWidth = document.documentElement.clientWidth;
+                            const windowHeight = document.documentElement.clientHeight;
+                            let winLeft = btnRect.left;
+                            let winTop = btnRect.top - winHeight - 10;
+                            // 边界调整
+                            if (winLeft < config.safeMargin) winLeft = config.safeMargin;
+                            if (winLeft + winWidth > windowWidth - config.safeMargin) {
+                                winLeft = windowWidth - winWidth - config.safeMargin;
+                            }
+                            if (winTop < config.safeMargin) winTop = config.safeMargin;
+                            if (winTop + winHeight > windowHeight - utils.getSafeBottom() - config.safeMargin) {
+                                winTop = btnRect.bottom + 10;
+                            }
+                            floatWindow.style.left = `${winLeft}px`;
+                            floatWindow.style.top = `${winTop}px`;
+                        }
+                    }
+                });
+                // 关闭窗口
+                closeWindow.addEventListener('click', () => {
+                    floatWindow.classList.remove('active');
+                });
+                // 悬浮球拖拽
+                floatBtn.addEventListener('touchstart', (e) => {
+                    btnDragStart = Date.now();
+                    const touch = e.touches[0];
+                    btnStartX = touch.clientX;
+                    btnStartY = touch.clientY;
+                    const btnRect = floatBtn.getBoundingClientRect();
+                    btnOffsetX = btnRect.left;
+                    btnOffsetY = btnRect.top;
+                    btnIsDragging = false;
+                }, { passive: true });
+                floatBtn.addEventListener('touchmove', (e) => {
+                    const touch = e.touches[0];
+                    const moveX = Math.abs(touch.clientX - btnStartX);
+                    const moveY = Math.abs(touch.clientY - btnStartY);
+                    if (moveX > 5 || moveY > 5 || Date.now() - btnDragStart > 150) {
+                        btnIsDragging = true;
+                        const newLeft = btnOffsetX + (touch.clientX - btnStartX);
+                        const newTop = btnOffsetY + (touch.clientY - btnStartY);
+                        const windowWidth = document.documentElement.clientWidth;
+                        const windowHeight = document.documentElement.clientHeight;
+                        const btnSize = config.floatBtnSize;
+                        const safeBottom = utils.getSafeBottom();
+                        const boundedLeft = Math.max(config.safeMargin, Math.min(newLeft, windowWidth - btnSize - config.safeMargin));
+                        const boundedTop = Math.max(config.safeMargin, Math.min(newTop, windowHeight - btnSize - safeBottom - config.safeMargin));
+                        floatBtn.style.left = `${boundedLeft}px`;
+                        floatBtn.style.top = `${boundedTop}px`;
+                    }
+                }, { passive: false });
+                // 弹窗拖拽
+                windowHeader.addEventListener('touchstart', (e) => {
+                    if (!floatWindow.classList.contains('active')) return;
+                    winDragStart = Date.now();
+                    const touch = e.touches[0];
+                    winStartX = touch.clientX;
+                    winStartY = touch.clientY;
+                    const winRect = floatWindow.getBoundingClientRect();
+                    winOffsetX = winRect.left;
+                    winOffsetY = winRect.top;
+                    winIsDragging = false;
+                }, { passive: true });
+                windowHeader.addEventListener('touchmove', (e) => {
+                    if (!floatWindow.classList.contains('active')) return;
+                    const touch = e.touches[0];
+                    const moveX = Math.abs(touch.clientX - winStartX);
+                    const moveY = Math.abs(touch.clientY - winStartY);
+                    if (moveX > 5 || moveY > 5 || Date.now() - winDragStart > 150) {
+                        winIsDragging = true;
+                        const newLeft = winOffsetX + (touch.clientX - winStartX);
+                        const newTop = winOffsetY + (touch.clientY - winStartY);
+                        const windowWidth = document.documentElement.clientWidth;
+                        const windowHeight = document.documentElement.clientHeight;
+                        const winWidth = floatWindow.offsetWidth;
+                        const winHeight = floatWindow.offsetHeight;
+                        const safeBottom = utils.getSafeBottom();
+                        const boundedLeft = Math.max(config.safeMargin, Math.min(newLeft, windowWidth - winWidth - config.safeMargin));
+                        const boundedTop = Math.max(config.safeMargin, Math.min(newTop, windowHeight - winHeight - safeBottom - config.safeMargin));
+                        floatWindow.style.left = `${boundedLeft}px`;
+                        floatWindow.style.top = `${boundedTop}px`;
+                    }
+                }, { passive: false });
+                // 下载按钮事件
+                floatWindow.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('item-download')) {
+                        const downloadUrl = e.target.dataset.url;
+                        downloadFile(downloadUrl, e.target);
+                    }
+                });
+                // 初始化执行（删除轮询启动）
+                initBtnPosition();
+                window.addEventListener('load', initBtnPosition);
+                window.addEventListener('resize', initBtnPosition);
+                renderHistoryList();
+            }
+            // 初始化函数
+            window.initFloatingWindow = function() {
+                try {
+                    createStyle();
+                    const elements = createElements();
+                    initFunctions(elements);
+                    console.log('✅ 无服务器版悬浮窗初始化完成');
+                } catch (err) {
+                    console.error('❌ 悬浮窗初始化失败：', err);
+                    alert('悬浮窗加载异常，请刷新页面重试');
+                }
+            };
+            // 可选：手动添加测试记录（无服务器时用）
+            window.addTestRecord = function() {
+                const now = new Date().toISOString();
+                let pushHistory = JSON.parse(localStorage.getItem('floatingWindowHistory') || '[]');
+                pushHistory.unshift({
+                    filename: '测试文件_' + new Date().getTime(),
+                    time: utils.formatTime(now),
+                    downloadUrl: '#' // 替换为实际链接
+                });
+                localStorage.setItem('floatingWindowHistory', JSON.stringify(pushHistory));
+                // 重新渲染列表
+                const historyList = document.getElementById('historyList');
+                if (historyList) renderHistoryList();
+            };
+        })();
+        // 页面加载后启动悬浮窗
+        window.onload = function() {
+            initFloatingWindow();
+        };
+    </script>
 </head>
 <body>
-    <!-- 无任何冗余DOM，悬浮窗由JS动态生成 -->
-
-    <!-- 加载替换地址后的悬浮窗JS -->
-    <script>
-    (function() {
-        // 防止重复加载
-        if (window.floatingWindowLoaded) return;
-        window.floatingWindowLoaded = true;
-
-        // 替换为你的新部署地址
-        const floatScriptUrl = 'https://zwy2673976185-design.github.io/floating-window.js3/floating-window.js';
-
-        const floatScript = document.createElement('script');
-        floatScript.src = floatScriptUrl;
-
-        // 加载状态反馈（便于排查问题）
-        floatScript.onload = function() {
-            console.log('✅ 优化版悬浮窗JS加载成功');
-            // 调用优化版JS中暴露的初始化函数
-            if (typeof initFloatingWindow === 'function') {
-                initFloatingWindow();
-            } else {
-                console.error('❌ 未找到初始化函数initFloatingWindow');
-                alert('悬浮窗初始化失败：未找到核心函数');
-            }
-        };
-
-        floatScript.onerror = function() {
-            console.error('❌ 悬浮窗JS加载失败，请检查：1.地址是否正确 2.GitHub Pages是否启用 3.文件路径是否匹配');
-            alert('悬浮窗加载失败，请检查部署地址有效性');
-        };
-
-        document.head.appendChild(floatScript);
-    })();
-</script>
+    <!-- 新增：承载动态内容的容器，ID固定为dynamic-content，用于同步服务器HTML -->
+    <div id="dynamic-content"></div>
+    <!-- 无任何冗余DOM，悬浮窗由内置JS动态生成 -->
 </body>
 </html>
