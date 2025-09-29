@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悬浮窗白板（接收内容）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #fff; height: 100vh; overflow: hidden; touch-action: none; }
+        /* 内容容器：只显示“发送方”的内容，层级低于悬浮窗 */
+        #content-receiver {
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1; /* 悬浮窗层级≥1001，永远在上面 */
+            position: relative;
+        }
+    </style>
+    <!-- 悬浮窗外部JS（你之前配置好的，完全不动） -->
+    <script>
+    (function() {
+        if (window.floatingWindowLoaded) return;
+        window.floatingWindowLoaded = true;
+        // 你的悬浮窗JS地址（原地址保留）
+        const floatScriptUrl = 'https://zwy2673976185-design.github.io/floating-window.js3/floating-window.js';
+        const floatScript = document.createElement('script');
+        floatScript.src = floatScriptUrl;
+
+        floatScript.onload = function() {
+            console.log('✅ 悬浮窗加载成功（永远保留）');
+            if (typeof initFloatingWindow === 'function') {
+                initFloatingWindow();
+                // 加载“发送方”的内容（关键：这里指向发送方文件）
+                loadSenderContent();
+            }
+        };
+        floatScript.onerror = () => alert('悬浮窗加载失败，检查地址');
+        document.head.appendChild(floatScript);
+    })();
+
+    // 核心：加载“发送方”的内容（自动显示）
+    async function loadSenderContent() {
+        try {
+            // 替换为你“发送方文件”的GitHub Raw地址（下面会教你获取）
+            const senderUrl = 'https://raw.githubusercontent.com/zwy2673976185-design/nrgx/main/sender-content.html';
+            const res = await fetch(senderUrl);
+            const senderHtml = await res.text();
+            // 把“发送方”的内容显示到容器里，悬浮窗不动
+            document.getElementById('content-receiver').innerHTML = senderHtml;
+        } catch (err) {
+            document.getElementById('content-receiver').innerHTML = `<div style="color:red; padding:30px;">内容加载失败：${err.message}</div>`;
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- 内容容器：“发送方”的内容会显示在这里 -->
+    <div id="content-receiver">加载中...</div>
+</body>
+</html>
