@@ -3,59 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>悬浮窗白板（接收内容）</title>
+    <title>悬浮窗+加载GitHub完整HTML</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #fff; height: 100vh; overflow: hidden; touch-action: none; }
-        /* 内容容器：只显示“发送方”的内容，层级低于悬浮窗 */
-        #content-receiver {
+        body { 
+            background: #fff; 
+            height: 100vh;
+            overflow: hidden; 
+            touch-action: none; 
+            position: relative; /* 给悬浮窗做定位基准 */
+        }
+        /* 1. iframe：加载GitHub上的完整HTML，层级低于悬浮窗 */
+        #github-html-iframe {
             width: 100%;
             height: 100%;
+            border: none; /* 去掉iframe边框 */
+            z-index: 1; /* 低于悬浮窗层级 */
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        /* 2. 加载失败提示（默认隐藏，加载失败时显示） */
+        #load-error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             padding: 20px;
-            overflow-y: auto;
-            z-index: 1; /* 悬浮窗层级≥1001，永远在上面 */
-            position: relative;
+            color: #ff4444;
+            font-size: 16px;
+            z-index: 2; /* 高于iframe，低于悬浮窗 */
+            display: none;
         }
     </style>
-    <!-- 悬浮窗外部JS（你之前配置好的，完全不动） -->
+</head>
+<body>
+    <!-- 1. iframe：加载GitHub仓库里的完整HTML（改这里的src为你的文件Raw地址） -->
+    <iframe 
+        id="github-html-iframe"
+        src="https://raw.githubusercontent.com/zwy2673976185-design/yyszx/main/Aoto.html"
+        onload="console.log('✅ GitHub完整HTML加载成功')"
+        onerror="document.getElementById('load-error').style.display='block'"
+    ></iframe>
+
+    <!-- 2. 加载失败提示 -->
+    <div id="load-error">GitHub文件加载失败，请检查地址是否正确</div>
+
+    <!-- 3. 悬浮窗（原逻辑完全保留，自动生成在父页面顶层） -->
     <script>
     (function() {
         if (window.floatingWindowLoaded) return;
         window.floatingWindowLoaded = true;
-        // 你的悬浮窗JS地址（原地址保留）
+        // 你的悬浮窗外部JS地址（不变）
         const floatScriptUrl = 'https://zwy2673976185-design.github.io/floating-window.js3/floating-window.js';
         const floatScript = document.createElement('script');
         floatScript.src = floatScriptUrl;
 
         floatScript.onload = function() {
-            console.log('✅ 悬浮窗加载成功（永远保留）');
+            console.log('✅ 悬浮窗加载成功（可正常拖拽点击）');
             if (typeof initFloatingWindow === 'function') {
                 initFloatingWindow();
-                // 加载“发送方”的内容（关键：这里指向发送方文件）
-                loadSenderContent();
+            } else {
+                alert('悬浮窗初始化失败，请检查JS地址');
             }
         };
-        floatScript.onerror = () => alert('悬浮窗加载失败，检查地址');
+        floatScript.onerror = () => alert('悬浮窗JS加载失败，检查地址');
         document.head.appendChild(floatScript);
     })();
-
-    // 核心：加载“发送方”的内容（自动显示）
-    async function loadSenderContent() {
-        try {
-            // 替换为你“发送方文件”的GitHub Raw地址（下面会教你获取）
-            const senderUrl = 'https://raw.githubusercontent.com/zwy2673976185-design/nrgx/main/sender-content.html';
-            const res = await fetch(senderUrl);
-            const senderHtml = await res.text();
-            // 把“发送方”的内容显示到容器里，悬浮窗不动
-            document.getElementById('content-receiver').innerHTML = senderHtml;
-        } catch (err) {
-            document.getElementById('content-receiver').innerHTML = `<div style="color:red; padding:30px;">内容加载失败：${err.message}</div>`;
-        }
-    }
     </script>
-</head>
-<body>
-    <!-- 内容容器：“发送方”的内容会显示在这里 -->
-    <div id="content-receiver">加载中...</div>
 </body>
 </html>
