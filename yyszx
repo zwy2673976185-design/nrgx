@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>淘宝网 - 淘！我喜欢</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        
+        body {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        
+        /* 顶部导航栏 */
+        .top-nav {
+            background-color: #f5f5f5;
+            height: 35px;
+            line-height: 35px;
+            font-size: 12px;
+            color: #999;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .container {
+            width: 1190px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .top-nav-left a, .top-nav-right a {
+            color: #999;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        
+        .top-nav-left a:hover, .top-nav-right a:hover {
+            color: #ff5000;
+        }
+        
+        /* 主导航栏 */
+        .main-nav {
+            background-color: #fff;
+            height: 110px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            width: 190px;
+            height: 110px;
+            background: linear-gradient(135deg, #ff5000 0%, #ff3000 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .search-box {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .search-box input {
+            width: 85%;
+            height: 40px;
+            border: 2px solid #ff5000;
+            border-right: none;
+            padding: 0 15px;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-box button {
+            width: 15%;
+            height: 40px;
+            background-color: #ff5000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-menu a {
+            margin: 0 10px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .user-menu a:hover {
+            color: #ff5000;
+        }
+        
+        .cart {
+            position: relative;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ff5000;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 分类导航 */
+        .category-nav {
+            background-color: #fff;
+            height: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .category-list {
+            display: flex;
+            list-style: none;
+        }
+        
+        .category-list li {
+            padding: 0 15px;
+            height: 40px;
+            line-height: 40px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .category-list li:hover {
+            color: #ff5000;
+        }
+        
+        /* 轮播图区域 */
+        .banner-section {
+            margin-top: 15px;
+            display: flex;
+        }
+        
+        .side-menu {
+            width: 190px;
+            background-color: rgba(0,0,0,0.8);
+            padding: 10px 0;
+        }
+        
+        .side-menu ul {
+            list-style: none;
+        }
+        
+        .side-menu li {
+            height: 30px;
+            line-height: 30px;
+            padding: 0 15px;
+        }
+        
+        .side-menu a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .side-menu a:hover {
+            color: #ff5000;
+        }
+        
+        .banner {
+            flex: 1;
+            height: 400px;
+            background: linear-gradient(45deg, #ff9000, #ff5000);
+            margin-left: 10px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        
+        .banner-content {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            transform: translateY(-50%);
+            color: white;
+            width: 40%;
+        }
+        
+        .banner-content h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+        
+        .banner-content p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .banner-content button {
+            background-color: white;
+            color: #ff5000;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* 商品展示区 */
+        .product-section {
+            margin-top: 30px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .section-more {
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        .product-card {
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .product-image {
+            height: 200px;
+            background-color: #f8f8f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .product-info {
+            padding: 10px;
+        }
+        
+        .product-title {
+            font-size: 14px;
+            height: 40px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .product-price {
+            color: #ff5000;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .product-sales {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        /* 页脚 */
+        footer {
+            margin-top: 50px;
+            background-color: #fff;
+            padding: 30px 0;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .footer-links {
+            margin-bottom: 15px;
+        }
+        
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        
+        .footer-links a:hover {
+            color: #ff5000;
+        }
+        
+        .copyright {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="top-nav">
+        <div class="container">
+            <div class="top-nav-left">
+                <a href="#">亲，请登录</a>
+                <a href="#">免费注册</a>
+                <a href="#">手机逛淘宝</a>
+            </div>
+            <div class="top-nav-right">
+                <a href="#">我的淘宝</a>
+                <a href="#">购物车</a>
+                <a href="#">收藏夹</a>
+                <a href="#">商品分类</a>
+                <a href="#">卖家中心</a>
+                <a href="#">联系客服</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主导航栏 -->
+    <div class="main-nav">
+        <div class="container">
+            <div class="logo">淘宝网</div>
+            <div class="search-box">
+                <input type="text" placeholder="连衣裙 夏装新款">
+                <button><i class="fas fa-search"></i></button>
+            </div>
+            <div class="user-menu">
+                <a href="#"><i class="fas fa-user"></i> 我的淘宝</a>
+                <a href="#" class="cart">
+                    <i class="fas fa-shopping-cart"></i> 购物车
+                    <span class="cart-count">3</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 分类导航 -->
+    <div class="category-nav">
+        <div class="container">
+            <ul class="category-list">
+                <li>天猫</li>
+                <li>聚划算</li>
+                <li>天猫超市</li>
+                <li>淘抢购</li>
+                <li>电器城</li>
+                <li>司法拍卖</li>
+                <li>中国质造</li>
+                <li>兴农扶贫</li>
+                <li>飞猪旅行</li>
+                <li>智能家居</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- 主要内容区 -->
+    <div class="container">
+        <!-- 轮播图区域 -->
+        <div class="banner-section">
+            <div class="side-menu">
+                <ul>
+                    <li><a href="#">女装 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">男装 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">鞋靴 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">箱包 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">美妆 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">家电 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">手机 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">母婴 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">食品 <i class="fas fa-chevron-right"></i></a></li>
+                    <li><a href="#">生鲜 <i class="fas fa-chevron-right"></i></a></li>
+                </ul>
+            </div>
+            <div class="banner">
+                <div class="banner-content">
+                    <h2>618理想生活狂欢季</h2>
+                    <p>跨店每满300减50，上不封顶！爆款好货限时抢购，错过再等一年！</p>
+                    <button>立即抢购</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 商品展示区 -->
+        <div class="product-section">
+            <div class="section-header">
+                <div class="section-title">猜你喜欢</div>
+                <a href="#" class="section-more">更多 <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="product-grid">
+                <!-- 商品1 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">夏季新款连衣裙女装韩版修身显瘦气质短袖裙子</div>
+                        <div class="product-price">¥168.00</div>
+                        <div class="product-sales">月销1.5万+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品2 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">2023夏季新款男士短袖T恤潮流宽松百搭休闲上衣</div>
+                        <div class="product-price">¥79.00</div>
+                        <div class="product-sales">月销2.3万+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品3 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">苹果iPhone 14 Pro Max 5G手机全网通</div>
+                        <div class="product-price">¥8999.00</div>
+                        <div class="product-sales">月销5000+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品4 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">小米平板5 Pro 11英寸 2.5K高清 120Hz</div>
+                        <div class="product-price">¥2399.00</div>
+                        <div class="product-sales">月销8000+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品5 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">夏季新款凉鞋女平底休闲沙滩鞋防滑舒适外穿</div>
+                        <div class="product-price">¥129.00</div>
+                        <div class="product-sales">月销1.2万+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 热门推荐 -->
+        <div class="product-section">
+            <div class="section-header">
+                <div class="section-title">热门推荐</div>
+                <a href="#" class="section-more">更多 <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div class="product-grid">
+                <!-- 商品6 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">华为MateBook 14 2023款 14英寸轻薄笔记本电脑</div>
+                        <div class="product-price">¥5999.00</div>
+                        <div class="product-sales">月销3000+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品7 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">夏季防晒衣女轻薄透气防紫外线皮肤衣外套</div>
+                        <div class="product-price">¥89.00</div>
+                        <div class="product-sales">月销3.5万+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品8 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">儿童玩具积木大颗粒拼装益智男孩女孩礼物</div>
+                        <div class="product-price">¥158.00</div>
+                        <div class="product-sales">月销2.1万+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品9 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">电动牙刷成人声波自动充电式软毛牙刷</div>
+                        <div class="product-price">¥199.00</div>
+                        <div class="product-sales">月销1.8万+</div>
+                    </div>
+                </div>
+                
+                <!-- 商品10 -->
+                <div class="product-card">
+                    <div class="product-image">
+                        商品图片
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">家用空气炸锅无油低脂电炸锅大容量智能</div>
+                        <div class="product-price">¥299.00</div>
+                        <div class="product-sales">月销1.6万+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">关于淘宝</a>
+                <a href="#">合作伙伴</a>
+                <a href="#">营销中心</a>
+                <a href="#">廉正举报</a>
+                <a href="#">联系客服</a>
+                <a href="#">开放平台</a>
+                <a href="#">诚聘英才</a>
+                <a href="#">联系我们</a>
+                <a href="#">网站地图</a>
+                <a href="#">隐私权政策</a>
+            </div>
+            <div class="copyright">
+                © 2023 淘宝网 taobao.com 版权所有
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
